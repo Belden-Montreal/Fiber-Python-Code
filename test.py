@@ -35,7 +35,8 @@ class GbE10:
 
         # receiver performance parameters
         self.rx_unstressed_sensitivity = ws['C33'].value # as labeled
-        self.rx_bw = ws['C34'].value # receiver bandwidth
+        self.rx_bw = ws['C34'].value # receiver bandwidth
+
         self.rx_reflection = ws['C35'].value # receiver reflectance
 
         # fiber channel performance parameters
@@ -114,7 +115,8 @@ class GbE10:
         self.eye_calc()
 
         # end of GbE10.__init__
-    #======================================================================+
+    #======================================================================+
+
 
     def preliminary_calc(self):
         # calculate Q from target BER; see equation B.41 in FC-MSQS-2
@@ -129,16 +131,17 @@ class GbE10:
         self.l_stop = 2.0*self.l_target - self.l_start
         self.lnum = 1+int(round((self.l_stop-self.l_start)/self.l_inc))
         self.length = np.linspace(self.l_start,self.l_stop,self.lnum)
-
+        print('lnum : ', self.lnum)
         # convenient unit vector used in several calculations
         self.l_1 = np.ones(self.lnum)
-    #======================================================================+
+    #======================================================================+
+
     
     def fiber_channel_calc(self):
         """Calculates fiber attenuation, modal bandwidth, and
         chromatic dispersion bandwidth"""
         # calculate fiber attenuation at minimum laser wavelength
-        self.alpha = (self.fiber_c_atten*(1.05+(1.0/(0.00094*self.lambda_min))**4)) # column B
+        self.alpha = (self.fiber_c_atten*(1.05+ (1.0/(0.00094*self.lambda_min))**4)) # column B
 
         # calculate channel insertion loss column C
         self.chil = self.alpha*self.length + self.fiber_conn_loss*self.l_1
@@ -207,8 +210,6 @@ class GbE10:
         self.isi_center = 2.0*erf(arg/self.tc) - self.l_1 # column Z
 
         # calculate center eye opening with residual DJ (DJ - DCD)
-
-
         self.isi_dj_center = (erf(arg*(1.0+self.dj_ui)/self.tc) + erf(arg*(1.0-self.dj_ui)/self.tc) - self.l_1) # column AD
 
         # calculate eye closing induced by interferometric effects from link end reflections
@@ -264,9 +265,11 @@ class GbE10:
         self.beta = (3.14159E-6*self.speedup*self.br_nominal *self.delta_lambda*self.d1*self.length) # column O
         self.sigma_mpn = (self.k_mpn/math.sqrt(2.0)*(self.l_1 -np.exp(-np.square(self.beta)))) # column P
         self.p_mpn = (-10.0*np.log10(np.sqrt(self.l_1 - (self.Q**2)*np.square(self.sigma_mpn)))) # column Q
-        self.p_blw = (-10.0*np.log10(np.sqrt(1.0- ((self.Q*self.sigma_blw)/ self.isi_tp4_rx)**2))*self.l_1) # cell T13
+        self.p_blw = (-10.0*math.log10(math.sqrt(1.0- ((self.Q*self.sigma_blw)/ self.isi_tp4_rx)**2))*self.l_1) # cell T13
         self.p_reflection = -10.0*np.log10(self.isi_reflection) # column N
         self.v_mn = (((1.0-math.pow(10.0,-0.2*self.pmn))/ (self.Q)**2)*self.l_1) # cell AG7
+        print("isi_center : ", self.isi_center)
+
         self.p_isi_center = -10.0*np.log10(self.isi_center) # column J
 
         self.p_isi_corners = (-10.0*np.log10(self.isi_corners) - self.p_isi_center) # column K
@@ -287,6 +290,7 @@ class GbE10:
                                 - self.p_reflection     # column N
                                 - self.p_rin            # column R
                                 - self.pmn*self.l_1)    # cell G13
+        print('p_isi_center: ', self.p_isi_center)
 
         # calculate the total power budget evaluated at the center of the eye
         self.p_total_center = (                         # column T
@@ -330,39 +334,45 @@ class GbE10:
 
 
     def eye_calc(self):
+
         """Calculates the eye diagrams for the link at target reach
         and for the transmitter at test"""
-
         # define the eye time vector scaled to UI, dimensionless
         tnum = (1+int(round((self.eye_time_high-self.eye_time_low) / self.eye_time_step)))
-        self.theta = np.linspace(self.eye_time_low, self.eye_time_high, tnum)
-
+        self.time = np.linspace(self.eye_time_low, # column Z
+                                self.eye_time_high,
+                                tnum)
         # convenience vector
         t_1 = np.ones(tnum)
-
         # column AA
-        self.theta_eff = 0.5*t_1 + self.speedup*(self.theta - 0.5*t_1)
-
+        self.time_eff = 0.5*t_1 + self.speedup*(self.time - 0.5*t_1)
+        arg1 = 2.0*erfinv(0.8)
+        arg2 = arg1/(1.0E-6*self.speedup*self.br_nominal)
+        
         # calculate eye profiles for link at target reach
         T_c_link = self.tc[self.lnum//2]
-        Arg = (2.0E6*erfinv(0.8)*T_c_link/ (self.speedup*self.tc[self.lnum//2]))
-        self.link_011 = 0.5*t_1 + 0.5*erf(Arg*self.theta_eff) # column AR
-        self.link_110 = (0.5*t_1 + 0.5*erf(Arg*(t_1 - self.theta_eff))) # column AS
+        arg3 = arg2*self.time_eff/T_c_link # column AP
+        arg4 = arg2*(1.0 - self.time_eff)/T_c_link # column AQ
+        self.link_011 = 0.5*t_1 + 0.5*erf(arg3) # column AR
+        self.link_110 = 0.5*t_1 + 0.5*erf(arg4) # column AS
         self.link_010 = self.link_011 + self.link_110 - t_1 # column AT
-        self.link_100 = t_1 - self.link_011 # column AU
-        self.link_001 = t_1 - self.link_110 # column AV
         self.link_101 = t_1 - self.link_010 # column AW
+        self.link_001 = t_1 - self.link_110 # column AU
+        self.link_100 = t_1 - self.link_011 # column AV
 
         # calculate eye profiles for transmitter eye test configuration
-        T_c_test = math.sqrt(self.tx_1090_rise**2 + (0.329E6/self.txeye_rx_bw)**2)
-        Arg = (2.0E6*erfinv(0.8)*T_c_test/ (self.speedup*self.tc[self.lnum//2]))
-        self.test_011 = 0.5*t_1 + 0.5*erf(Arg*self.theta_eff) # column AD
-        self.test_110 = (0.5*t_1 + 0.5*erf(Arg*(t_1 - self.theta_eff))) # column AE
-        self.test_010 = self.test_011 + self.test_110 - t_1 # column AF
-        self.test_100 = t_1 - self.test_011 # column AG
-        self.test_001 = t_1 - self.test_110 # column AH
-        self.test_101 = t_1 - self.test_010 # column AI
+        T_c_test = math.sqrt(self.tx_1090_rise**2
+        + (0.329E6/self.txeye_rx_bw)**2)
+        arg5 = arg2*self.time_eff/T_c_test
+        arg6 = arg2*(t_1 - self.time_eff)/T_c_test
+        self.test_011 = 0.5*t_1 + 0.5*erf(arg5) # column AR
+        self.test_110 = 0.5*t_1 + 0.5*erf(arg6) # column AS
+        self.test_010 = self.test_011 + self.test_110 - t_1 # column AT
+        self.test_101 = t_1 - self.test_010
+        self.test_001 = t_1 - self.test_110
+        self.test_100 = t_1 - self.test_011
 
+        print("Margin : ", self.margin)
 
         
 # end of GbE10.eye_calc
@@ -370,7 +380,8 @@ class GbE10:
 # |
 # End of file Gb10E_support.py |
 # |
-#======================================================================+
+#======================================================================+
+
 
 
 if __name__ == '__main__':
@@ -383,10 +394,11 @@ if __name__ == '__main__':
     plt.plot (g.length, g.p_atten,label='P_atten')
     plt.plot (g.length, g.p_cross_center,label='P_cross(central)' )
     plt.legend(loc='upper left')
-    plt.show()'''
+    plt.show()'''
+
 
     g = GbE10('Inputs')
-    plt.plot (g.time, g.link_001)
+    plt.plot (g.time, g.link_001 , label='budget')
     plt.plot (g.time, g.link_010)
     plt.plot (g.time, g.link_011)
     plt.plot (g.time, g.link_100)
