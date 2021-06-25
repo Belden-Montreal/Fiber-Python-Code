@@ -9,50 +9,51 @@ class GbE10:
 
         # link parameters
         self.br_nominal = ws['C4'].value # nominal baud rate
-        self.ber_target = ws['C5'].value # allowed bit error rate limit
-        self.fiber_conn_loss = ws['C6'].value # connector loss
-        self.l_target = ws['C8'].value # desired link reach
-        self.l_start = ws['C9'].value # minimum link reach
-        self.l_inc = ws['C10'].value # link reach increment
+        self.ber_target = 0 #ws['C5'].value # allowed bit error rate limit
+        self.fiber_conn_loss = ws['L7'].value # connector loss
+        self.l_target = ws['L3'].value # desired link reach
+        self.l_start = ws['L4'].value # minimum link reach
+        self.l_inc = ws['L5'].value # link reach increment
 
         # jitter
-        self.dj = ws['C13'].value # deterministic jitter
-        self.dcd_dj = ws['C14'].value # duty cycle distortion
+        self.dj = ws['G7'].value # deterministic jitter
+        self.dcd_dj = ws['G8'].value # duty cycle distortion
 
         # transmitter performance parameters
-        self.tx_oma_min = ws['C17'].value # minimum transmitter optical modulation amplitude
-        self.er_dB_min = ws['C18'].value # minimum required extinction ratio
-        self.tx_2080_rise = ws['C19'].value # transmitter rise / fall time, 20%-80%
-        self.lambda_min = ws['C20'].value # minimum VCSEL wavelength
-        self.delta_lambda = ws['C21'].value # VCSEL spectral width
-        self.tx_reflection = ws['C22'].value # transmitter reflectance
-        self.rin = ws['C23'].value # laser residual intensity noise (RIN)
-        self.rin_test_isi = ws['C24'].value # eye opening, RIN tester
-        self.txeye_rx_bw = ws['C26'].value # receiver bandwidth for Tx eye tester
-        self.X1 = ws['C28'].value # transmitter eye mask, X1
-        self.X2 = ws['C29'].value # transmitter eye mask, X2
-        self.Y1 = ws['C30'].value # transmitter eye mask, Y1
+        self.tx_oma_min = ws['C8'].value # minimum transmitter optical modulation amplitude
+        self.er_dB_min = ws['C9'].value # minimum required extinction ratio
+        self.tx_2080_rise = ws['G2'].value # transmitter rise / fall time, 20%-80%
+        self.lambda_min = ws['C6'].value # minimum VCSEL wavelength
+        self.delta_lambda = ws['C7'].value # VCSEL spectral width
+        self.tx_reflection = ws['G12'].value # transmitter reflectance
+        self.rin = ws['G4'].value # laser residual intensity noise (RIN)
+        self.rin_test_isi = ws['AK7'].value # eye opening, RIN tester
+        self.txeye_rx_bw = ws['W5'].value # receiver bandwidth for Tx eye tester
+        self.X1 = ws['C12'].value # transmitter eye mask, X1
+        self.X2 = ws['C13'].value # transmitter eye mask, X2
+        self.Y1 = ws['C14'].value # transmitter eye mask, Y1
 
         # receiver performance parameters
-        self.rx_unstressed_sensitivity = ws['C33'].value # as labeled
-        self.rx_bw = ws['C34'].value # receiver bandwidth
+        self.rx_unstressed_sensitivity = ws['T3'].value # as labeled
+        self.rx_bw = ws['T5'].value # receiver bandwidth
 
-        self.rx_reflection = ws['C35'].value # receiver reflectance
+        self.rx_reflection = ws['T4'].value # receiver reflectance
 
         # fiber channel performance parameters
-        self.fiber_c_atten = ws['C38'].value # fiber attenuation factor
-        self.fiber_s0 = ws['C39'].value # fiber dispersion
-        self.fiber_u0 = ws['C40'].value # zero dispersion wavelength for fiber
-        self.fib_lbwp = ws['C41'].value # fiber length-modal bandwidth product
+        self.fiber_c_atten = ws['P4'].value # fiber attenuation factor
+        self.fiber_s0 = ws['P8'].value # fiber dispersion
+        self.fiber_u0 = ws['P7'].value # zero dispersion wavelength for fiber   #Cell Uo -> Check this if not working???
+        self.fib_lbwp = ws['P12'].value # fiber length-modal bandwidth product
 
         # noise penalty parameters
-        self.pmn = ws['C44'].value # power penalty for modal noise
-        self.ref_nf = ws['C45'].value # noise factor for reflectance
-        self.k_mpn = ws['C46'].value # k factor for mode partition noise
-        self.sigma_blw = ws['C47'].value # baseline wander noise standard deviation
-        self.eye_time_low = ws['C49'].value # minimum eye plot time (UI)
-        self.eye_time_high = ws['C50'].value # maximum eye plot time
-        self.eye_time_step = ws['C51'].value # eye plot time increment
+        self.pmn = ws['G13'].value # power penalty for modal noise          #Cell Pmn -> Check this if not working???
+        self.ref_nf = ws['L10'].value # noise factor for reflectance
+        self.k_mpn = ws['G10'].value # k factor for mode partition noise
+        self.sigma_blw = ws['T10'].value # baseline wander noise standard deviation   #Cell SD_blw -> Check this if not working???
+
+        self.eye_time_low = -0.25 #Fixing Value #ws['Z41'].value # minimum eye plot time (UI)
+        self.eye_time_high = 1.25 #ws['Z71'].value # maximum eye plot time
+        self.eye_time_step = ws['$Y$42'].value # eye plot time increment
 
         self.time = np.arange(self.eye_time_low, self.eye_time_high,  self.eye_time_step)
 
@@ -329,7 +330,9 @@ class GbE10:
         self.margin = self.p_budget - self.p_total_center
 
         print("Margin : ", self.margin)
-        
+
+        print("Length : ", self.length)
+
 
 
         # end of GbE10.penalty_calc
@@ -390,7 +393,7 @@ if __name__ == '__main__':
     
     import matplotlib.pyplot as plt
 
-    g = GbE10('Inputs')
+    g = GbE10()
 
     fig, axs = plt.subplots(2)
     fig.suptitle('10Gbe Plots')
