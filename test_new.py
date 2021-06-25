@@ -58,7 +58,7 @@ class GbE10:
 
         #PRINT
 
-        print(self.br_nominal )
+        '''print(self.br_nominal )
         print(self.ber_target) 
         print(self.fiber_conn_loss )
         print( self.l_target)
@@ -101,7 +101,7 @@ class GbE10:
         print(self.sigma_blw)
         print(self.eye_time_low )
         print(self.eye_time_high )
-        print(self.eye_time_step )
+        print(self.eye_time_step )''' 
 
         self.Q = 7.04
 
@@ -207,7 +207,7 @@ class GbE10:
 
         arg1 = erfinv(0.8)
         arg2 = arg1/(1.0E-6*self.speedup*self.br_nominal)
-        print('arg2 : ', arg2)
+        #print('arg2 : ', arg2)
 
         # calculate center eye opening with no additional impairments
         self.isi_center = erf(arg2/self.tc) # column Z
@@ -217,7 +217,7 @@ class GbE10:
         arg3 = erf(arg2*(1.0+self.dj_ui)/self.tc) # column AI
         arg4 = erf(arg2*(1.0-self.dj_ui)/self.tc) # column AJ
 
-        print(arg3, arg4)
+        #print(arg3, arg4)
         
         self.isi_dj_center = arg3 + arg4 - self.l_1 # column AD
 
@@ -302,7 +302,7 @@ class GbE10:
                                 - self.p_reflection     # column N
                                 - self.p_rin            # column R
                                 - self.pmn*self.l_1)    # cell G13
-        print('p_isi_center: ', self.p_isi_center)
+        #print('p_isi_center: ', self.p_isi_center)
 
         # calculate the total power budget evaluated at the center of the eye
         self.p_total_center = (                         # column T
@@ -326,9 +326,9 @@ class GbE10:
                                 + self.pmn*self.l_1     # cell G13
                                 + self.p_dj_corners)    # column M
 
+        self.margin = self.p_budget - self.p_total_center
 
-        # end of GbE10.penalty_calc
-        #======================================================================+
+        print("Margin : ", self.margin)
         
 
 
@@ -387,29 +387,33 @@ class GbE10:
 
 
 if __name__ == '__main__':
+    
     import matplotlib.pyplot as plt
-    g = GbE10('Inputs')
-    plt.plot (g.length, g.p_budget,label='budget')
-    plt.plot (g.length, g.p_total_center,label='P_total (central)')
-    plt.plot (g.length, g.p_total_corners,label='P_total(corners)')
-    plt.plot (g.length, g.p_isi_center,label='P_isi(central)')
-    plt.plot (g.length, g.p_atten,label='P_atten')
-    plt.plot (g.length, g.p_cross_center,label='P_cross(central)' )
-    plt.legend(loc='upper left')
-    plt.show()
-
 
     g = GbE10('Inputs')
-    plt.plot (g.time, g.link_001 , label="erf2' ")
-    plt.plot (g.time, g.link_010, label="oio ")
-    plt.plot (g.time, g.link_011,  label="erf1 ")
-    plt.plot (g.time, g.link_100, label="erf1' ")
-    plt.plot (g.time, g.link_101, label="ioi ")
-    plt.plot (g.time, g.link_110, label="erf2 ")
-    plt.plot (g.time, g.test_010, label="oio ")
-    plt.plot (g.time, g.test_101 , label="ioi ")
 
-    plt.legend(loc='upper left')
+    fig, axs = plt.subplots(2)
+    fig.suptitle('10Gbe Plots')
+
+    
+    axs[0].plot (g.length, g.p_budget,label='budget')
+    axs[0].plot (g.length, g.p_total_center,label='P_total (central)')
+    axs[0].plot (g.length, g.p_total_corners,label='P_total(corners)')
+    axs[0].plot (g.length, g.p_isi_center,label='P_isi(central)')
+    axs[0].plot (g.length, g.p_atten,label='P_atten')
+    axs[0].plot (g.length, g.p_cross_center,label='P_cross(central)' )
+    axs[0].legend(loc='upper left')
+
+
+    axs[1].plot (g.time, g.link_001 , label="erf2' ")
+    axs[1].plot (g.time, g.link_010, label="oio ")
+    axs[1].plot (g.time, g.link_011,  label="erf1 ")
+    axs[1].plot (g.time, g.link_100, label="erf1' ")
+    axs[1].plot (g.time, g.link_101, label="ioi ")
+    axs[1].plot (g.time, g.link_110, label="erf2 ")
+    axs[1].plot (g.time, g.test_010, label="oio ")
+    axs[1].plot (g.time, g.test_101 , label="ioi ")
+    axs[1].legend(loc='upper left')
 
     plt.show()
 
